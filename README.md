@@ -6,17 +6,29 @@
 
 🎮 **No installation. No build step. Just open the game and play.**
 
----
-
 ## ▶️ Play WICK
 
-**Download or clone the repository, then open `index.html` in a modern browser.**
+### 🌟 Play Vanilla
+
+Want to jump straight into the game without downloading anything?
+
+**[▶️ PLAY WICK — VANILLA](https://lseeecubb-code.github.io/undersave/)**
+
+This is the browser version of WICK. No setup required — just open it and start playing.
+
+### 🛠️ Or Get the Project
+
+Want to experiment with the game, edit rooms, or explore the developer tools?
+
+**[📦 View the WICK GitHub Repository](https://github.com/lseeecubb-code/undersave)**
+
+Download or clone the repository, then open `index.html` in a modern browser.
 
 Keep the `js` folder beside `index.html`.
 
-[View the WICK repository](https://github.com/lseeecubb-code/undersave?utm_source=chatgpt.com)
+---
 
-### 🎮 Controls
+## 🎮 Controls
 
 | Key               | Action                             |
 | ----------------- | ---------------------------------- |
@@ -243,21 +255,9 @@ Dialogue areas can contain their own text.
 
 Every enemy has a `natural` setting.
 
-Set it to:
+Set it to `true` to allow the enemy to appear as a random walking encounter in rooms where it is included in the encounter pool.
 
-```text
-true
-```
-
-to allow the enemy to appear as a random walking encounter in rooms where it is included in the encounter pool.
-
-Set it to:
-
-```text
-false
-```
-
-for story-triggered or placed-only enemies.
+Set it to `false` for story-triggered or placed-only enemies.
 
 The hidden enemy editor exposes the same setting, so you can build your own encounter pools without editing the source code manually.
 
@@ -305,32 +305,6 @@ WICK/
 └── README.md
 ```
 
-### Important files
-
-**`js/maps.js`**
-Rooms, layouts, doors, objects, encounters, and story scenes.
-
-**`js/enemies.js`**
-Enemies, phases, dialogue, levels, drops, and weaknesses.
-
-**`js/attack-patterns.js`**
-Bullet patterns and combat scenes.
-
-**`js/npcs.js`**
-NPCs, chapters, dialogue, quests, and companions.
-
-**`js/shops.js`**
-Shops, items, gear, skills, recipes, and prices.
-
-**`js/battle.js`**
-Combat state, actions, projectile collisions, and battle rendering.
-
-**`js/world.js`**
-Exploration, movement, collisions, interactions, and map rendering.
-
-**`js/devtools.js`**
-The hidden editor, local saving, import, and export tools.
-
 ---
 
 # 💾 Export Your World
@@ -342,28 +316,6 @@ For a portable backup, use:
 **Game Data → Export project data**
 
 This creates JSON containing your project data so you can preserve or transfer your customizations.
-
-When an older browser save is opened, WICK can add newer campaign maps, NPCs, story signs, encounter pools, enemies, and attack patterns while preserving existing custom maps and settings.
-
-After opening the updated game, export your project data again if you want your backup to include the newest content.
-
----
-
-# 🌟 What's Inside?
-
-WICK currently brings together:
-
-> **69 monsters**
-> **21 phase-two records**
-> **100 items & equipment**
-> **22 skills**
-> **140 recipes**
-> **11 chapters**
-> **11 main quests**
-> **24 side quests**
-> **94 remastered tracks**
-
-And that's only the beginning.
 
 ---
 
@@ -385,14 +337,12 @@ And if something looks suspicious...
 
 **interact with it.**
 
-You never know what you'll find.
-
 ---
 
-## ⭐ If you enjoy WICK
+# ⭐ Play WICK
 
-Star the repository, experiment with the editor, and make your own rooms, encounters, and stories.
+### 🌟 [▶️ PLAY VANILLA](https://lseeecubb-code.github.io/undersave/)
+
+### 🛠️ [📦 VIEW ON GITHUB](https://github.com/lseeecubb-code/undersave)
 
 **The world is yours to explore.**
-
-[GitHub — WICK](https://github.com/lseeecubb-code/undersave?utm_source=chatgpt.com)
