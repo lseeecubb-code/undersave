@@ -45,7 +45,7 @@ const R=[
 ];
 
 // Repository content is merged into WICK's existing game registries.
-const REPO_SOURCE_CONTENT={source:"https://github.com/lseeecubb-code/b",monsters:GAME_REPO_MONSTER_DATA,items:GAME_REPO_ITEM_DATA,playerGear:GAME_REPO_GEAR_DATA,rpgSystems:GAME_REPO_STORY_DATA.rpg,dialogue:GAME_REPO_STORY_DATA.dialogue};
+const REPO_SOURCE_CONTENT={source:"https://github.com/lseeecubb-code/b",monsters:GAME_REPO_MONSTER_DATA,items:GAME_REPO_ITEM_DATA,playerGear:GAME_REPO_GEAR_DATA,rpgSystems:GAME_REPO_STORY_DATA.rpg||GAME_REPO_STORY_DATA.rpgSystems||{},dialogue:GAME_REPO_STORY_DATA.dialogue};
 const REPO_SOURCE_AUDIO=GAME_REPO_AUDIO;
 // Adapted campaign content from THE LAST SAVE repository.
 // Kept as data so the original story, enemy and shop modules stay easy to extend.
@@ -290,6 +290,7 @@ for(const room of R)for(let i=0;i<(room.d||[]).length;i++){
    if(!prior){if(existing)Object.assign(existing,entry);else NPCS.push(entry)}
    const room=mapFor(regionByCharacter[name]);if(room){room.o=room.o||[];if(!room.o.some(o=>o.npcId===id))room.o.push({k:'npc',npcId:id,x:name==='Mira'?292:300,y:278})}
   }
-  const defs=source.rpgSystems;
-  window.REPO_CONTENT_COUNTS={enemies:Object.keys(roster).length,items:Object.keys(source.items.ITEMS).length,skills:Object.keys(source.items.SKILLS).length,recipes:Object.keys(source.items.recipes).length,quests:Object.keys(defs.SIDE_QUESTS).length+Object.keys(source.dialogue.STORY_QUESTS).length,chapters:source.dialogue.STORY_CHAPTERS.length,companions:Object.keys(defs.COMPANION_DEFS).length,audio:REPO_SOURCE_AUDIO.filter(x=>x.endsWith('.wav')).length};
+  const defs=source.rpgSystems||{};
+  if(!source.rpgSystems||!Object.keys(source.rpgSystems).length)console.warn('WICK: GAME_REPO_STORY_DATA.rpg is missing; quest/companion counts will be 0. Keys found:',Object.keys(GAME_REPO_STORY_DATA||{}));
+  window.REPO_CONTENT_COUNTS={enemies:Object.keys(roster).length,items:Object.keys(source.items.ITEMS).length,skills:Object.keys(source.items.SKILLS).length,recipes:Object.keys(source.items.recipes).length,quests:Object.keys(defs.SIDE_QUESTS||{}).length+Object.keys(source.dialogue.STORY_QUESTS).length,chapters:source.dialogue.STORY_CHAPTERS.length,companions:Object.keys(defs.COMPANION_DEFS||{}).length,audio:REPO_SOURCE_AUDIO.filter(x=>x.endsWith('.wav')).length};
 })();
