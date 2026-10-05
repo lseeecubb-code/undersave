@@ -1,0 +1,149 @@
+// debug.js — put this FIRST in index.html, before every other <script>:
+//   <script src="js/debug.js"></script>
+// It lives in the page (DOM), not the game canvas, so it still works when the game goes black.
+// F2 toggles the panel (it opens by itself on any error). Add ?debug to the URL to start it open.
+// Buttons: Run checks · Copy report (paste it to Claude) · Clear · Close.
+(function(){
+ const MAX=200,log=[],seen=new Map();
+ let panel,bodyEl,statEl,renderTimer=0,lastRaf=0,rafSeen=false,stalled=false,checks=[],checkedAt='';
+ const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+ const file=u=>String(u||'').split('/').slice(-2).join('/');
+ const G=expr=>{try{return(0,eval)(expr)}catch(e){return undefined}};
+ const kind=name=>{try{return(0,eval)('typeof '+name)}catch(e){return 'uninitialized'}};
+
+ /* ---------- log ---------- */
+ function add(type,msg,where,stack){
+  const key=type+'|'+msg+'|'+where,old=seen.get(key);
+  if(old){old.n++;schedule();return}
+  const e={key,type,msg:String(msg),where:where||'',stack:stack?String(stack).split('\n').slice(0,4).join('\n'):'',n:1,time:new Date().toLocaleTimeString()};
+  seen.set(key,e);log.push(e);
+  if(log.length>MAX){const gone=log.shift();seen.delete(gone.key)}
+  if(type==='error'||type==='syntax'||type==='load')show(true);
+  schedule()
+ }
+ addEventListener('error',e=>{
+  const t=e.target;
+  if(t&&t!==window&&t.tagName){add('load','Failed to load <'+t.tagName.toLowerCase()+'> '+(t.src||t.href||''),'check the file name, folder and spelling');return}
+  const msg=e.message||String(e.error||'error');
+  add(/SyntaxError/.test(msg)?'syntax':'error',msg,file(e.filename)+':'+e.lineno+':'+e.colno,e.error&&e.error.stack)
+ },true);
+ addEventListener('unhandledrejection',e=>add('error','Unhandled promise rejection: '+(e.reason&&e.reason.message||e.reason),'',e.reason&&e.reason.stack));
+ for(const level of ['error','warn']){
+  const orig=console[level].bind(console);
+  console[level]=function(...a){try{add(level==='error'?'console.error':'console.warn',a.map(x=>x&&x.stack?x.stack:typeof x==='object'?JSON.stringify(x):String(x)).join(' '),'')}catch(_){}orig(...a)}
+ }
+
+ /* ---------- game-loop heartbeat ---------- */
+ const rafOrig=window.requestAnimationFrame.bind(window);
+ window.requestAnimationFrame=function(cb){rafSeen=true;lastRaf=performance.now();return rafOrig(t=>{lastRaf=performance.now();return cb(t)})};
+ setInterval(()=>{
+  if(!rafSeen||document.hidden)return;
+  const dead=performance.now()-lastRaf>2000;
+  if(dead&&!stalled){stalled=true;add('error','GAME LOOP STOPPED — an error killed the animation loop. The first red error above is the cause.','')}
+  if(!dead&&stalled)stalled=false;
+  updateStatus()
+ },500);
+
+ /* ---------- self checks ---------- */
+ function runChecks(){
+  const out=[],ok=(pass,label,detail)=>out.push({pass,label,detail:detail||''});
+  // scripts and order
+  const scripts=[...document.scripts].map(s=>s.src).filter(Boolean).map(s=>s.split('/').pop().split('?')[0]);
+  ok(scripts[0]==='debug.js','debug.js is the first script','order is: '+scripts.join(' → '));
+  const want=['world.js','look.js','story.js','main.js'],pos=want.map(n=>scripts.indexOf(n));
+  want.forEach((n,i)=>ok(pos[i]>=0,n+' is included',pos[i]<0?'missing <script src="js/'+n+'"> in index.html':''));
+  const present=pos.filter(p=>p>=0);ok(present.every((p,i)=>!i||p>present[i-1]),'world.js → look.js → story.js → main.js order','current order: '+scripts.join(' → '));
+  // globals
+  const needs={world:['R','ENEMIES','NPCS','SHOPS','SPRITES','GAME_REPO_STORY_DATA','g','st','rm','pl','fr','updWorld','drawWorld','leave','saveProgress','wsay','hit','tx','blip','startBattle','sprite','candle'],look:['drawRoomScene','lookScene','roomTheme'],story:['storyStep','beginEndgame','restoreStoryState','checkStory','sceneForRoom']};
+  for(const group in needs){const missing=needs[group].filter(n=>kind(n)==='undefined'||kind(n)==='uninitialized');ok(!missing.length,group+' globals present',missing.length?'missing: '+missing.join(', '):'')}
+  ok(kind('newGame')==='function','newGame() exists','story.js resets story state through it; if missing, call resetStoryState() when you start a new game');
+  // wrappers + the world.js edit
+  const src=n=>{try{return String((0,eval)(n))}catch(e){return ''}};
+  ok(/storyStep/.test(src('updWorld')),'story.js wraps updWorld');
+  ok(/storyFail/.test(src('drawWorld')),'story.js wraps drawWorld');
+  ok(/isFinalBoss/.test(src('leave'))||/isFinalBoss/.test(src('_leave'))||kind('isFinalBoss')==='function','story.js wraps leave');
+  ok(/#5b3b20/.test(src('obj')),'look.js props are active (obj overridden)','if false, look.js loaded before world.js or not at all');
+  ok(/drawRoomScene/.test(src('_drawWorld')||src('drawWorld')),'world.js calls drawRoomScene(r)','the old background/door drawing was not replaced');
+  // canvas
+  const ctx=G('g');ok(!!ctx&&!!ctx.canvas,'canvas context g is valid',ctx&&ctx.canvas?ctx.canvas.width+'×'+ctx.canvas.height:'');
+  // data
+  const R=G('R')||[],ENEMIES=G('ENEMIES')||[],NPCS=G('NPCS')||[],SHOPS=G('SHOPS')||[],SPRITES=G('SPRITES')||[],issues=[];
+  const hasE=id=>ENEMIES.some(e=>e.id===id),themes=G('LOOK_THEMES');
+  R.forEach((r,i)=>{
+   const n=(r.n||'room '+i)+' (#'+i+')';
+   if(!Array.isArray(r.f)||r.f.length<4||r.f.some(v=>typeof v!=='number'||isNaN(v)))issues.push(n+': floor f is not [x,y,w,h]');
+   for(const d of r.d||[]){
+    if(d.to>=R.length)issues.push(n+': door leads to missing room '+d.to);
+    else if(d.to>=0&&d.arrivalSpawnId!=null&&d.arrivalSpawnId!==''&&!(R[d.to].spawns||[]).some(s=>String(s.id)===String(d.arrivalSpawnId)))issues.push(n+': arrival spawn "'+d.arrivalSpawnId+'" missing in '+R[d.to].n)
+   }
+   for(const o of r.o||[]){
+    if(o.k==='npc'&&o.npcId&&!NPCS.some(x=>x.id===o.npcId))issues.push(n+': npcId "'+o.npcId+'" not in NPCS');
+    if(o.k==='shop'&&!SHOPS.some(x=>x.id===o.shopId))issues.push(n+': shopId "'+o.shopId+'" not in SHOPS');
+    if(o.spriteId&&!SPRITES.some(x=>x.id===o.spriteId))issues.push(n+': spriteId "'+o.spriteId+'" not in SPRITES')
+   }
+   for(const t of r.triggers||[])if(t.k==='enemy'&&!hasE(t.enemyId))issues.push(n+': enemy trigger "'+t.enemyId+'" not in ENEMIES');
+   if(r.enemyId&&!hasE(r.enemyId))issues.push(n+': enemyId "'+r.enemyId+'" not in ENEMIES');
+   for(const id of r.encounters||[])if(!hasE(id))issues.push(n+': encounter "'+id+'" not in ENEMIES');
+   if(Array.isArray(themes)&&!themes.some(t=>t.m.test(String(r.n||'').toLowerCase())))issues.push(n+': no look theme matches this name (uses default purple ruins)')
+  });
+  ok(R.length>0,R.length+' rooms loaded');
+  ok(!issues.length,'room data references',issues.slice(0,25).join('\n')+(issues.length>25?'\n…and '+(issues.length-25)+' more':''));
+  if(kind('checkStory')==='function'){let p=[];try{p=G('checkStory()')||[]}catch(e){p=['checkStory threw: '+e.message]}ok(!p.length,'story scenes and doors',p.join('\n'))}
+  checks=out;checkedAt=new Date().toLocaleTimeString();schedule();return out
+ }
+
+ /* ---------- panel ---------- */
+ function build(){
+  if(panel||!document.documentElement)return;
+  panel=document.createElement('div');
+  panel.style.cssText='position:fixed;left:0;right:0;bottom:0;max-height:48vh;display:none;flex-direction:column;background:rgba(0,0,0,.93);color:#ddd;font:11px/1.4 monospace;z-index:2147483647;border-top:2px solid #f55';
+  const bar=document.createElement('div');bar.style.cssText='display:flex;gap:6px;align-items:center;padding:4px 6px;background:#260808;flex:none';
+  const title=document.createElement('b');title.textContent='DEBUG';title.style.color='#f88';bar.appendChild(title);
+  statEl=document.createElement('span');statEl.style.cssText='flex:1;color:#9cf;overflow:hidden;white-space:nowrap;text-overflow:ellipsis';bar.appendChild(statEl);
+  const btn=(label,fn)=>{const b=document.createElement('button');b.textContent=label;b.style.cssText='font:11px monospace;background:#333;color:#fff;border:1px solid #666;padding:2px 8px;cursor:pointer';b.onclick=e=>{fn();b.blur();e.stopPropagation()};bar.appendChild(b)};
+  btn('Run checks',runChecks);btn('Copy report',copyReport);btn('Clear',()=>{log.length=0;seen.clear();schedule()});btn('Close',()=>show(false));
+  bodyEl=document.createElement('div');bodyEl.style.cssText='overflow:auto;padding:6px 8px;white-space:pre-wrap;word-break:break-word';
+  panel.appendChild(bar);panel.appendChild(bodyEl);document.documentElement.appendChild(panel)
+ }
+ function show(v){build();if(!panel)return;panel.style.display=v?'flex':'none';if(v){updateStatus();render()}}
+ function updateStatus(){
+  if(!statEl)return;
+  const R=G('R')||[],rmv=G('rm'),room=R[rmv];
+  statEl.textContent='loop: '+(rafSeen?(stalled?'STOPPED':'running'):'no frames yet')+'  st='+G('st')+'  room='+rmv+(room?' ('+room.n+')':'')+'  frame='+G('fr')+'  errors='+log.filter(e=>/error|syntax|load/.test(e.type)).length
+ }
+ function schedule(){if(renderTimer)return;renderTimer=setTimeout(()=>{renderTimer=0;render()},100)}
+ function render(){
+  if(!bodyEl||panel.style.display==='none')return;
+  const c={error:'#f66',syntax:'#f66',load:'#f66','console.error':'#f96','console.warn':'#fc6'};
+  let h='';
+  if(checks.length){const bad=checks.filter(x=>!x.pass);h+='<b style="color:'+(bad.length?'#f96':'#6f6')+'">CHECKS ('+checkedAt+'): '+(checks.length-bad.length)+' ok, '+bad.length+' problem(s)</b>\n';
+   for(const x of checks)if(!x.pass)h+='<span style="color:#f66">✗ '+esc(x.label)+'</span>'+(x.detail?'\n    <span style="color:#aaa">'+esc(x.detail).replace(/\n/g,'\n    ')+'</span>':'')+'\n';
+   h+='\n'}
+  else h+='<span style="color:#888">Press “Run checks” to test scripts, globals and room data.</span>\n\n';
+  h+='<b>LOG</b> ('+log.length+')\n';
+  for(const e of log.slice().reverse())h+='<span style="color:'+(c[e.type]||'#ccc')+'">['+e.time+'] '+e.type+(e.n>1?' ×'+e.n:'')+': '+esc(e.msg)+'</span>'+(e.where?' <span style="color:#8af">@ '+esc(e.where)+'</span>':'')+(e.stack?'\n<span style="color:#777">'+esc(e.stack)+'</span>':'')+'\n';
+  bodyEl.innerHTML=h
+ }
+ function report(){
+  const L=['WICK DEBUG REPORT '+new Date().toISOString(),navigator.userAgent,location.href,'',statEl?statEl.textContent:'','','SCRIPTS: '+[...document.scripts].map(s=>s.src.split('/').pop()||'(inline)').join(' → '),''];
+  if(!checks.length)runChecks();
+  L.push('CHECKS: '+checks.filter(x=>!x.pass).length+' problem(s)');
+  for(const x of checks)if(!x.pass)L.push('  ✗ '+x.label+(x.detail?'\n      '+x.detail.replace(/\n/g,'\n      '):''));
+  L.push('','LOG:');
+  for(const e of log)L.push('['+e.time+'] '+e.type+(e.n>1?' x'+e.n:'')+': '+e.msg+(e.where?'  @ '+e.where:'')+(e.stack?'\n    '+e.stack.replace(/\n/g,'\n    '):''));
+  return L.join('\n')
+ }
+ function copyReport(){
+  const text=report();
+  const fallback=()=>{const t=document.createElement('textarea');t.value=text;t.style.cssText='position:fixed;top:0;left:0;opacity:0';document.documentElement.appendChild(t);t.select();try{document.execCommand('copy')}catch(_){}t.remove()};
+  (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(text).catch(fallback):Promise.resolve(fallback()));
+  add('info','Report copied to clipboard — paste it to Claude','')
+ }
+
+ addEventListener('keydown',e=>{if(e.key==='F2'){e.preventDefault();build();show(!panel||panel.style.display==='none')}});
+ addEventListener('load',()=>{
+  runChecks();updateStatus();
+  if(/[?&]debug\b/.test(location.search)||checks.some(x=>!x.pass))show(true)
+ });
+ window.dbg={check:runChecks,report,show,log};
+})();
