@@ -1,4 +1,3 @@
-
 const cv=document.getElementById('c'),g=cv.getContext('2d');
 const K={},P={};let au=null;
 addEventListener('keydown',e=>{let k=e.key.toLowerCase();if(k==='enter')k='z';if(!K[k])P[k]=1;K[k]=1;
@@ -20,7 +19,7 @@ const flavor=["* WICK flickers nervously.","* The candle smell gets stronger.","
 function newGame(fresh=false){playerLevel=1;experience=0;mhp=20;hp=mhp;buns=2;inventory=[];materials={};beaten=0;defeated={};spared=0;taken={};encounterDistance={};pendingEnemyId=null;roamingEncounter=false;st='world';rm=0;pl={x:320,y:280};resp={rm:0,x:320,y:280};
   if(fresh){try{localStorage.removeItem('wick-save-slot')}catch(_){}}
   else if(!window.wickStarted){try{const save=JSON.parse(localStorage.getItem('wick-save-slot')||'null');if(save){const room=R.findIndex(r=>r.id===save.roomId);if(room>=0){rm=room;pl={x:save.x,y:save.y};hp=save.hp;mhp=save.mhp;playerLevel=save.playerLevel;experience=save.experience;buns=save.buns;inventory=save.inventory||[];materials=save.materials||{};defeated=save.defeated||{};taken=save.taken||{};resp=save.resp||resp;const resumed=true;wsay(["* Your journey continues.","* (Press Escape to open the menu.)"]);return}}}catch(_){}}
-  window.wickStarted=true;if(!window.wickStarted||!resumed)wsay(["* You wake in a quiet hall.","* The air smells like melted wax.","* (Arrows to move, Z to interact)"])}
+  window.wickStarted=true;wsay(["* You wake in a quiet hall.","* The air smells like melted wax.","* (Arrows to move, Z to interact)"])}
 function startBattle(){activeEnemy=ENEMIES.find(e=>e.id===(pendingEnemyId||R[rm].enemyId||'wick'))||ENEMIES[0];if(window.ensureEnemySprite)window.ensureEnemySprite(activeEnemy);setGameMusic(activeEnemy.audio,.25);ehp=emax=Math.max(1,+activeEnemy.hp||60);bossPhaseTwo=false;turn=0;acted=new Set();mercy=0;B=[];st='text';graze=0;
   const openers=activeEnemy.repoDialogue?.attack;const opener=openers?.length?openers[Math.floor(Math.random()*openers.length)]:activeEnemy.name+' blocks your way.';say('* '+opener,toMenu)}
 function say(s,n){const layout=fitDialogueText(s);text=layout.lines.join('\n');dialogueFont=layout.size;shown=0;after=n;st='text'}
