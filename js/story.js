@@ -105,31 +105,43 @@ function drawRoomCard(){
 }
 
 /* ---------- wrappers around world.js ---------- */
-const _updWorld=updWorld;
-updWorld=function(){
+let storyErr='';
+function storyFail(e){if(!storyErr){storyErr=String(e&&e.message||e);console.error('[story.js]',e)}}
+// Returns true when story logic took over this frame.
+function storyStep(){
  if(roomCard)roomCard.t++;
- if(st==='fin'){beginEndgame();return}               // exit door of the last room
- if(st==='endchoice'){updEndChoice();return}
- if(st==='ending'){updEnding();return}
+ if(st==='fin'){beginEndgame();return true}               // exit door of the last room
+ if(st==='endchoice'){updEndChoice();return true}
+ if(st==='ending'){updEnding();return true}
  if(st==='world'&&rm!==lastStoryRoom){
   lastStoryRoom=rm;
   const id=sceneForRoom(R[rm]);
   roomCard={text:R[rm].n,sub:chapterTitleForScene(id),t:0};
-  if(id&&!seenScenes[id]){seenScenes[id]=1;wsay(storyData().STORY_SCENES[id]);return}
+  if(id&&!seenScenes[id]){seenScenes[id]=1;wsay(storyData().STORY_SCENES[id]);return true}
  }
- _updWorld()
+ return false
+}
+const _updWorld=updWorld;
+updWorld=function(){
+ let done=false;
+ try{done=storyStep()}catch(e){storyFail(e);if(st==='endchoice'||st==='ending')st='world'}
+ if(!done)_updWorld()
 };
 
 const _drawWorld=drawWorld;
 drawWorld=function(){
- if(st==='ending'){drawEnding();return}
- const bossIntro=st==='enc'&&!roamingEncounter&&et<30,shake=bossIntro?(1-et/30)*5:0;
- g.save();if(shake)g.translate((Math.random()-.5)*shake*2,(Math.random()-.5)*shake*2);
- _drawWorld();
- if(bossIntro&&et<8){g.fillStyle='rgba(255,255,255,'+(1-et/8)*.45+')';g.fillRect(0,0,640,480)}
- g.restore();
- if(st==='endchoice')drawEndChoice();
- if(st==='world'||st==='wtext')drawRoomCard()
+ if(st==='ending'){try{drawEnding();return}catch(e){storyFail(e);st='world'}}
+ let bossIntro=false,shake=0;
+ try{bossIntro=st==='enc'&&!roamingEncounter&&et<30;shake=bossIntro?(1-et/30)*5:0}catch(e){storyFail(e)}
+ g.save();
+ if(shake)g.translate((Math.random()-.5)*shake*2,(Math.random()-.5)*shake*2);
+ try{_drawWorld()}finally{g.restore()}
+ try{
+  if(bossIntro&&et<8){g.fillStyle='rgba(255,255,255,'+(1-et/8)*.45+')';g.fillRect(0,0,640,480)}
+  if(st==='endchoice')drawEndChoice();
+  if(st==='world'||st==='wtext')drawRoomCard()
+ }catch(e){storyFail(e)}
+ if(storyErr){g.fillStyle='#f55';g.font='9px monospace';g.fillText('story.js: '+storyErr,8,474)}
 };
 
 const _leave=leave;
