@@ -103,14 +103,7 @@ function drawWorld(){
  const r=R[rm],f=r.f;
  setGameMusic(r.soundData||'',.3);
  g.fillStyle='#000';g.fillRect(0,0,640,480);
- g.fillStyle=r.bg;g.fillRect(f[0],f[1],f[2],f[3]);
- if(r.backgroundData){let im=roomImages[r.id];if(!im){im=new Image();im.onload=()=>{};im.src=r.backgroundData;roomImages[r.id]=im}if(im.complete&&im.naturalWidth)g.drawImage(im,f[0],f[1],f[2],f[3])}
- g.strokeStyle='rgba(255,255,255,.06)';g.lineWidth=1;
- for(let x=f[0];x<=f[0]+f[2];x+=32){g.beginPath();g.moveTo(x,f[1]);g.lineTo(x,f[1]+f[3]);g.stroke()}
- for(let y=f[1];y<=f[1]+f[3];y+=32){g.beginPath();g.moveTo(f[0],y);g.lineTo(f[0]+f[2],y);g.stroke()}
- for(const c of r.c||[]){g.fillStyle=r.obstacleColor||'rgba(10,9,16,.82)';g.fillRect(c.x,c.y,c.w,c.h);g.strokeStyle='rgba(232,220,192,.24)';g.lineWidth=2;g.strokeRect(c.x+.5,c.y+.5,c.w-1,c.h-1);g.fillStyle='rgba(255,255,255,.07)';g.fillRect(c.x+4,c.y+4,Math.max(0,c.w-8),3)}
- g.strokeStyle='#6b5a8a';g.lineWidth=4;g.strokeRect(f[0]-2,f[1]-2,f[2]+4,f[3]+4);
- for(const d of r.d)if(d.to>=0||beaten){g.fillStyle='rgba(255,210,122,.22)';g.fillRect(d.x,d.y,d.w,d.h)}
+ drawRoomScene(r);
  const L=r.o.map(o=>({y:o.y,d:()=>obj(o)}));L.push({y:pl.y,d:player});L.sort((a,b)=>a.y-b.y).forEach(e=>e.d());
  tx(r.n,20,16,'#777',10);tx('LV '+playerLevel+'  HP '+hp+'/'+mhp+'   BUNS '+buns,340,16,'#aaa',9);
  if(st==='wtext'){g.fillStyle='#000';g.fillRect(40,336,560,128);g.strokeStyle='#fff';g.lineWidth=5;g.strokeRect(38,334,564,132);
