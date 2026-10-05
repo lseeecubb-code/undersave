@@ -1,42 +1,398 @@
-# WICK — a danmaku RPG fight
+# ⚔️ WICK — A Danmaku RPG Adventure
 
-Open `index.html` in a modern browser; keep the `js` folder beside it. No build step is needed. The game works as a static file, and its secret editor opens with the key sequence `D E V M O D E`.
+> **Fight monsters. Explore strange rooms. Make choices. Survive the bullet storm.**
+>
+> **WICK** is a pixel-art RPG built around fast **danmaku (bullet-hell) combat**, exploration, branching conversations, shops, secrets, and a growing world to uncover.
 
-## Room maps
+🎮 **No installation. No build step. Just open the game and play.**
 
-Room data lives in `js/maps.js` as `R`. The editor changes these same room records: `f:[x,y,width,height]` is the floor rectangle, `o` contains positioned objects, `d` contains door rectangles, `c` contains collision rectangles, and `triggers` contains enemy or dialogue rectangles. Click the map preview to place objects or areas. In Select mode drag objects, doors, and areas; use the blue corner handle to resize floors, doors, collision boxes, and trigger areas. Signs and NPCs are point objects and can be moved but not resized. The editor saves data in browser storage; use Export project data for a portable JSON backup.
+---
 
-Door `to` is the target room's zero-based index in `R`; `px,py` is the arrival position. An enemy area uses the room's selected `enemyId`; a dialogue area uses the placement text. `c` rectangles block player movement. You can attach an image and sound file to a room from the editor.
+## ▶️ Play WICK
 
-Rooms now use clear rectangular walkable spaces, open center paths, and doors placed at consistent edges. The campaign regions no longer contain hidden collision blocks. The Wax Corridor links back to Hollow Hall, onward to the Dark Room, and north to the Lantern Garden; the Garden's west exit opens the eleven-region route from [THE LAST SAVE](https://github.com/lseeecubb-code/b), from the Quiet Road to the Last Autosave. Visit Pip, use a checkpoint, and search the chest. Mira shares chapter memories, each region has repeatable walking encounters and a story fight, and the Archive has a roadside shop.
+**Download or clone the repository, then open `index.html` in a modern browser.**
 
-Checkpoints show the determination line and ask whether to SAVE or RETURN. SAVE restores HP and records the checkpoint; RETURN closes the prompt. Conversation text is wrapped before display and its font shrinks when needed to keep each page within four lines.
+Keep the `js` folder beside `index.html`.
 
-NPCs may define `options:[{label,lines}]` for branching conversations. An option may instead use `shopId` to open a shop. Shops are defined in `js/shops.js`; room objects use `{k:'shop',shopId:'lantern-stand',x,y}`. Arrow keys move through choices and stock, Z confirms, and X backs out. Purchases spend BUNS and apply their effect immediately.
+[View the WICK repository](https://github.com/lseeecubb-code/undersave?utm_source=chatgpt.com)
 
-Press Escape while exploring to open the pause menu. Items purchased from shops go into the 8-slot inventory and can be used from ITEM. The menu also opens the shop list, shows status, and saves the current position, HP, currency, inventory, and room progress in browser storage. The FIGHT timing bar shows the moving strike marker, center target, and timing guides.
+### 🎮 Controls
 
-## Content files
+| Key               | Action                             |
+| ----------------- | ---------------------------------- |
+| **Arrow Keys**    | Move / navigate menus              |
+| **Z**             | Confirm / interact                 |
+| **X**             | Back / cancel                      |
+| **Escape**        | Open pause menu                    |
+| **D E V M O D E** | Unlock the secret developer editor |
 
-- `js/maps.js`: room layouts, floor geometry, room objects and door connections.
-- `js/enemies.js`: WICK and imported monster definitions, phases, dialogue, levels, and weaknesses.
-- `js/attack-patterns.js`: WICK patterns, imported move patterns, and combat scenes.
-- `js/npcs.js`: NPCs plus imported chapters, dialogue, quests, and companion records.
-- `js/shops.js`: WICK shops plus imported items, gear, skills, recipes, and price data.
-- `js/maps.js`: room layouts, campaign maps, doors, objects, and imported story scenes.
-- `js/sprites.js`: pixel sprite definitions.
-- `audio/remastered/ambient/` and `audio/remastered/enemies/`: WICK and imported region / enemy themes.
-- `js/battle.js`: battle state, player actions, projectile collision, and rendering.
-- `js/world.js`: exploration movement, collisions, interactions, and map rendering.
-- `js/main.js`: animation loop and startup.
-- `js/devtools.js`: hidden room editor, local saving, and import/export.
+---
 
-Map object kinds include `sign`, `npc`, `save`, `chest`, and `wickmob`. Dialogue is stored as `t:["line one", "line two"]`.
+# 💥 Enter the Bullet Storm
 
-Every enemy has a `natural` boolean. Set it to `true` to allow random walking encounters in rooms that list that enemy in `encounters`; set it to `false` for story-triggered or placed-only enemies. The hidden enemy panel exposes the same Natural encounters setting. Imported monsters keep their source levels, abilities, drop tables, weaknesses, battle dialogue, and boss-phase records. Their attacks are converted into individual WICK bullet patterns; campaign rooms add natural monsters by level band, and source story scenes are readable from signs in their matching rooms.
+WICK combines RPG exploration with **danmaku-style battles**.
 
-Type `D E V M O D E` and open **Game data** to browse the complete content catalogs. The enemy and attack testers include the imported roster and per-move patterns. Test battles restore the player's room and HP afterwards. The imported shop, item, recipe, quest, companion, scene, and chapter data are available for inspection; WICK's normal combat and menu controls remain in use.
+During combat you'll need to:
 
-The transferred snapshot includes 69 monster records, 21 phase-two records, 100 item and equipment records, 22 skills, 140 recipes, 11 story chapters and their dialogue scenes, 11 main-quest records, 24 side quests, companion data, faction and town data, achievements, and 94 remastered WAV tracks. Source monster HP is retained as `repoHP`; playable HP is scaled for WICK's smaller combat system. Each source basic attack and ability has a generated WICK bullet pattern, with the original attack data kept alongside it.
+* ⚔️ Choose between **FIGHT, TALK, ACT, SPARE**, and other actions
+* ❤️ Dodge waves of enemy projectiles
+* 🎯 Time your attacks with the strike bar
+* 🧠 Learn enemy patterns and weaknesses
+* 🛡️ Survive increasingly dangerous phases
+* 💬 Discover different dialogue and battle outcomes
 
-When an older browser save is opened, the hidden editor adds the campaign maps, source NPCs, story-scene signs, encounter pools, enemy records, and attack patterns once while keeping existing custom maps and settings. Export the project data after opening the updated game if you want the new content in an existing JSON backup. Audio files stay beside the game and play from relative paths, including when opened as a static file URL.
+Every enemy has its own abilities, dialogue, weaknesses, and attack patterns.
+
+Some fights are random.
+
+Others are waiting for you as part of the story.
+
+---
+
+# 🌎 Explore a Living World
+
+WICK isn't just a collection of battles.
+
+Explore connected regions filled with:
+
+* 🧑 NPCs and branching conversations
+* 📜 Story scenes and memories
+* 💾 Checkpoints
+* 🎁 Hidden chests
+* 🚪 Connected rooms
+* 👾 Random encounters
+* ⚔️ Story battles
+* 🛒 Shops and travelling merchants
+* 🔍 Secrets waiting to be discovered
+
+Visit **Pip**, use a checkpoint, search the chest, talk to **Mira**, and uncover the memories scattered throughout the world.
+
+The **Wax Corridor** connects back to **Hollow Hall**, onward to the **Dark Room**, and north toward the **Lantern Garden**.
+
+From there, the journey opens into an eleven-region route leading from **Quiet Road** all the way to **Last Autosave**.
+
+---
+
+# 💾 Your Choices Matter
+
+Checkpoints aren't just save points.
+
+When you reach one, you'll see the determination line and choose:
+
+**SAVE**
+Restore your HP and record your progress.
+
+**RETURN**
+Leave the checkpoint without saving.
+
+Your progress can include:
+
+* Current room
+* Player position
+* HP
+* Currency
+* Inventory
+* Room progress
+* Other game state
+
+Everything is stored locally in your browser.
+
+---
+
+# 🎒 Items, Shops & BUNS
+
+Find and buy items throughout your journey.
+
+Shops offer equipment, skills, recipes, supplies, and other useful discoveries.
+
+Purchased items enter your **8-slot inventory** and can be used directly from the pause menu.
+
+**BUNS** are used as currency.
+
+Choose carefully — what you buy can make a difference when the next battle begins.
+
+---
+
+# 🧑‍🤝‍🧑 Characters & Stories
+
+The world is filled with characters, quests, companions, factions, towns, and memories.
+
+Talk to NPCs to discover:
+
+* 💬 Branching conversations
+* 📖 Chapter memories
+* 🗺️ Main quests
+* ❔ Side quests
+* 🤝 Companion stories
+* 🏘️ Town and faction information
+* 🏆 Achievements
+* ⚔️ Story encounters
+
+Some conversations even give you choices that can lead to different interactions.
+
+---
+
+# 👾 A Massive Monster Roster
+
+WICK contains a large collection of enemies with their own combat data.
+
+The transferred content currently includes:
+
+* **69 monster records**
+* **21 phase-two records**
+* **100 item & equipment records**
+* **22 skills**
+* **140 recipes**
+* **11 story chapters**
+* **11 main quests**
+* **24 side quests**
+* Companion data
+* Faction and town data
+* Achievements
+* **94 remastered WAV tracks**
+
+Imported monsters retain their original levels, abilities, drops, weaknesses, dialogue, and boss-phase information.
+
+Their HP is also preserved as `repoHP`, while playable HP is scaled for WICK's faster combat system.
+
+---
+
+# 🎵 A Growing Soundtrack
+
+WICK includes a large collection of remastered audio.
+
+Audio is stored alongside the game, including:
+
+```text
+audio/
+└── remastered/
+    ├── ambient/
+    └── enemies/
+```
+
+Music and sound effects load through relative paths, so they can play directly from a static file.
+
+---
+
+# 🗺️ The Secret Developer Editor
+
+Think you've found everything?
+
+Try this:
+
+## `D E V M O D E`
+
+Then open **Game data**.
+
+The hidden editor lets you inspect and modify the game's world.
+
+You can edit:
+
+* 🏠 Rooms
+* 🟦 Floors
+* 🚪 Doors
+* 🧱 Collision areas
+* 👾 Enemy triggers
+* 💬 Dialogue areas
+* 🪧 Signs
+* 🧑 NPCs
+* 💾 Checkpoints
+* 🎁 Chests
+* 👾 WICK mobs
+* 🛒 Shops
+* 🖼️ Room images
+* 🔊 Room sounds
+
+Click the map preview to place objects and areas.
+
+In **Select mode**, you can drag objects around and resize supported areas using the blue corner handle.
+
+Signs and NPCs are point objects, so they can be moved but not resized.
+
+---
+
+# 🧩 Build Your Own Rooms
+
+Room data lives in:
+
+```text
+js/maps.js
+```
+
+The main room collection is `R`.
+
+Each room can contain:
+
+```text
+f          Floor rectangle
+o          Objects
+d          Doors
+c          Collision rectangles
+triggers   Enemy/dialogue areas
+```
+
+Doors use the target room's **zero-based index** in `R`.
+
+Enemies can be assigned as natural encounters or placed specifically for story events.
+
+Dialogue areas can contain their own text.
+
+---
+
+# 👾 Natural Encounters
+
+Every enemy has a `natural` setting.
+
+Set it to:
+
+```text
+true
+```
+
+to allow the enemy to appear as a random walking encounter in rooms where it is included in the encounter pool.
+
+Set it to:
+
+```text
+false
+```
+
+for story-triggered or placed-only enemies.
+
+The hidden enemy editor exposes the same setting, so you can build your own encounter pools without editing the source code manually.
+
+---
+
+# ⚔️ Build & Test Battles
+
+The hidden Game Data tools also include:
+
+* Enemy browser
+* Attack pattern browser
+* Battle tester
+* Imported monster roster
+* Individual enemy move patterns
+* Phase-two data
+* Dialogue
+* Weaknesses
+* Drops
+* Levels
+
+Test battles temporarily change the game state and restore your previous room and HP afterwards.
+
+Every imported basic attack and ability is converted into an individual WICK bullet pattern while retaining the original attack data.
+
+---
+
+# 🛠️ Project Structure
+
+```text
+WICK/
+├── index.html
+├── audio/
+│   └── remastered/
+├── js/
+│   ├── maps.js
+│   ├── enemies.js
+│   ├── attack-patterns.js
+│   ├── npcs.js
+│   ├── shops.js
+│   ├── sprites.js
+│   ├── battle.js
+│   ├── world.js
+│   ├── main.js
+│   └── devtools.js
+└── README.md
+```
+
+### Important files
+
+**`js/maps.js`**
+Rooms, layouts, doors, objects, encounters, and story scenes.
+
+**`js/enemies.js`**
+Enemies, phases, dialogue, levels, drops, and weaknesses.
+
+**`js/attack-patterns.js`**
+Bullet patterns and combat scenes.
+
+**`js/npcs.js`**
+NPCs, chapters, dialogue, quests, and companions.
+
+**`js/shops.js`**
+Shops, items, gear, skills, recipes, and prices.
+
+**`js/battle.js`**
+Combat state, actions, projectile collisions, and battle rendering.
+
+**`js/world.js`**
+Exploration, movement, collisions, interactions, and map rendering.
+
+**`js/devtools.js`**
+The hidden editor, local saving, import, and export tools.
+
+---
+
+# 💾 Export Your World
+
+The editor saves changes in your browser.
+
+For a portable backup, use:
+
+**Game Data → Export project data**
+
+This creates JSON containing your project data so you can preserve or transfer your customizations.
+
+When an older browser save is opened, WICK can add newer campaign maps, NPCs, story signs, encounter pools, enemies, and attack patterns while preserving existing custom maps and settings.
+
+After opening the updated game, export your project data again if you want your backup to include the newest content.
+
+---
+
+# 🌟 What's Inside?
+
+WICK currently brings together:
+
+> **69 monsters**
+> **21 phase-two records**
+> **100 items & equipment**
+> **22 skills**
+> **140 recipes**
+> **11 chapters**
+> **11 main quests**
+> **24 side quests**
+> **94 remastered tracks**
+
+And that's only the beginning.
+
+---
+
+# 🔥 The Goal
+
+WICK is designed to feel like a strange little RPG that rewards curiosity.
+
+Talk to everyone.
+
+Search everything.
+
+Learn enemy patterns.
+
+Try different choices.
+
+Return to places you've already visited.
+
+And if something looks suspicious...
+
+**interact with it.**
+
+You never know what you'll find.
+
+---
+
+## ⭐ If you enjoy WICK
+
+Star the repository, experiment with the editor, and make your own rooms, encounters, and stories.
+
+**The world is yours to explore.**
+
+[GitHub — WICK](https://github.com/lseeecubb-code/undersave?utm_source=chatgpt.com)
