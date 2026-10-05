@@ -27,6 +27,7 @@ b{color:#ff7a00;font-weight:normal}
  <section class="devtab" id="dev-sprites"><aside class="devpanel"><h2>Sprite / NPC editor</h2><label>Sprite name<input id="sprite-name" value="new-sprite"></label><label>Pixel size<select id="sprite-size"><option>16</option><option>24</option><option>32</option></select></label><label>Color<input id="sprite-color" type="color" value="#f5c75e"></label><div class="toolbar"><button id="sprite-erase">Transparent</button><button id="sprite-clear">Clear sprite</button></div><label>NPC name<input id="npc-name" value="New NPC"></label><label>NPC dialogue<textarea id="npc-dialogue"></textarea></label><button id="sprite-save">Save sprite and NPC</button><canvas id="sprite-canvas" width="384" height="384"></canvas><pre id="sprite-data"></pre></aside><div class="devpanel"><h2>NPC / sprite data</h2><p class="hint">Click or drag to draw pixels. Save adds the sprite and NPC to the project data. A map NPC placement can select the saved NPC.</p></div></section>
  <section class="devtab" id="dev-repo"><aside class="devpanel"><h2>Repository content</h2><label>Content group<select id="repo-category"></select></label><label>Entry<select id="repo-entry"></select></label><button id="repo-test-enemy">Test selected enemy</button><p class="hint" id="repo-count"></p></aside><div class="devpanel"><pre id="repo-detail"></pre></div></section>
 </section>
+<script src="js/debug.js"></script>
 <script src="js/enemies.js"></script>
 <script src="js/attack-patterns.js"></script>
 <script src="js/battle.js"></script>
