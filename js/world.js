@@ -103,7 +103,7 @@ function drawWorld(){
  const r=R[rm],f=r.f;
  setGameMusic(r.soundData||'',.3);
  g.fillStyle='#000';g.fillRect(0,0,640,480);
- drawRoomScene(r);
+ try{drawRoomScene(r)}catch(e){g.fillStyle=r.bg;g.fillRect(f[0],f[1],f[2],f[3]);g.strokeStyle='#6b5a8a';g.lineWidth=4;g.strokeRect(f[0]-2,f[1]-2,f[2]+4,f[3]+4);for(const c of r.c||[]){g.fillStyle='rgba(10,9,16,.82)';g.fillRect(c.x,c.y,c.w,c.h)}for(const d of r.d)if(d.to>=0||beaten){g.fillStyle='rgba(255,210,122,.22)';g.fillRect(d.x,d.y,d.w,d.h)}g.fillStyle='#f55';g.font='9px monospace';g.fillText('look.js: '+String(e&&e.message||e),8,462)}
  const L=r.o.map(o=>({y:o.y,d:()=>obj(o)}));L.push({y:pl.y,d:player});L.sort((a,b)=>a.y-b.y).forEach(e=>e.d());
  tx(r.n,20,16,'#777',10);tx('LV '+playerLevel+'  HP '+hp+'/'+mhp+'   BUNS '+buns,340,16,'#aaa',9);
  if(st==='wtext'){g.fillStyle='#000';g.fillRect(40,336,560,128);g.strokeStyle='#fff';g.lineWidth=5;g.strokeRect(38,334,564,132);
