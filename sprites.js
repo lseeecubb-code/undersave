@@ -1,0 +1,2 @@
+// Pixel sprites use one color (or null for transparent) per cell, row-major.
+const SPRITES=[{id:'moth',width:16,height:16,pixels:(()=>{const p=Array(256).fill(null),put=(x,y,c)=>p[y*16+x]=c;for(let y=3;y<8;y++)for(let x=1;x<7;x++)if((x+y)%3!==0)put(x,y,'#c8b8ff');for(let y=3;y<8;y++)for(let x=9;x<15;x++)if((x+y)%3!==0)put(x,y,'#c8b8ff');for(let y=6;y<14;y++)for(let x=5;x<11;x++)put(x,y,'#8a6fd0');put(6,8,'#111111');put(9,8,'#111111');return p})()}];
