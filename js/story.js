@@ -179,7 +179,17 @@ try{
  toMenu=function(){if(!(menu>=0&&menu<4))menu=0;return _toMenu.apply(this,arguments)};
 }catch(e){console.warn('[story.js] battle menu guard not installed',e)}
 
-try{const _newGame=newGame;newGame=function(...a){resetStoryState();return _newGame.apply(this,a)}}catch(_){}
+// newGame() resets story state, and restores it from the save slot when battle.js loads that save.
+try{
+ const _newGame=newGame;
+ newGame=function(...a){
+  const fresh=a[0],willLoad=!fresh&&!window.wickStarted;
+  resetStoryState();
+  const result=_newGame.apply(this,a);
+  if(willLoad){try{const save=JSON.parse(localStorage.getItem('wick-save-slot')||'null');if(save)restoreStoryState(save)}catch(_){}}
+  return result
+ }
+}catch(_){}
 
 /* ---------- route sanity check (runs once; type checkStory() in the console any time) ---------- */
 function checkStory(){
