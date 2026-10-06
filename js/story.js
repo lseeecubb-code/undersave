@@ -105,6 +105,12 @@ function drawRoomCard(){
 }
 
 /* ---------- wrappers around world.js ---------- */
+
+// world.js's inWorld() decides which states main.js routes to updWorld/drawWorld;
+// the new ending states must be included or the game freezes at the ending choice.
+const _inWorld=inWorld;
+inWorld=function(){return _inWorld()||st==='endchoice'||st==='ending'};
+
 let storyErr='';
 function storyFail(e){if(!storyErr){storyErr=String(e&&e.message||e);console.error('[story.js]',e)}}
 // Returns true when story logic took over this frame.
