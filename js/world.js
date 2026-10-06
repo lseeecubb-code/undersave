@@ -1,5 +1,5 @@
 // Exploration, interactions, and world rendering.
-let conversationNpc=null,choiceIndex=0,activeShop=null,shopIndex=0,shopReturn='world',checkpoint=null,checkpointChoice=0;
+let conversationNpc=null,choiceIndex=0,activeShop=null,shopIndex=0,shopReturn='world',checkpoint=null,checkpointChoice=0; 
 let inventory=[],materials={},menuMode='main',menuIndex=0,menuNotice='',pauseReturnState='world';
 let debugBattleSnapshot=null;
 let encounterDistance={},pendingEnemyId=null,roamingEncounter=false;
