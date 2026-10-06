@@ -62,8 +62,8 @@
   ok(/storyStep/.test(src('updWorld')),'story.js wraps updWorld');
   ok(/storyFail/.test(src('drawWorld')),'story.js wraps drawWorld');
   ok(/isFinalBoss/.test(src('leave'))||/isFinalBoss/.test(src('_leave'))||kind('isFinalBoss')==='function','story.js wraps leave');
-  ok(/#5b3b20/.test(src('obj')),'look.js props are active (obj overridden)','if false, look.js loaded before world.js or not at all');
-  ok(/drawRoomScene/.test(src('_drawWorld')||src('drawWorld')),'world.js calls drawRoomScene(r)','the old background/door drawing was not replaced');
+  ok(/#5b3b20/.test(src('obj')+src('_propObjBase')),'look.js props are active (obj overridden)','if false, look.js loaded before world.js or not at all');
+  ok(/drawRoomScene/.test(src('drawWorld')+src('_drawWorld')+src('_rmDraw')),'world.js calls drawRoomScene(r)','the old background/door drawing was not replaced');
   // canvas
   const ctx=G('g');ok(!!ctx&&!!ctx.canvas,'canvas context g is valid',ctx&&ctx.canvas?ctx.canvas.width+'×'+ctx.canvas.height:'');
   // data
