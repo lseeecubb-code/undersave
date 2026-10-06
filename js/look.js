@@ -74,8 +74,40 @@ function lookWalls(k,f,th){
  k.fillStyle=th.wallLine;k.fillRect(fx-8,top,2,bh+fh+4);k.fillRect(fx+fw+6,top,2,bh+fh+4);k.fillRect(fx-8,fy+fh,fw+16,4);
  k.fillStyle='rgba(0,0,0,.22)';k.fillRect(fx,fy,fw,6)
 }
+// Block styles for remodeled maps (c.style). c.inv=true means "collision only, draw nothing".
+const LOOK_BLOCK_STYLES={
+ hedge:{top:'#3b7a47',front:'#2a5a34',line:'#173a20',pat:'leaves'},
+ pew:{top:'#7a5636',front:'#5e4028',line:'#2e1e12',pat:'planks'},
+ shelf:{top:'#5a3a22',front:'#3a2514',line:'#150c05',pat:'books'},
+ water:{flat:'#2f6fb0',edge:'#9fd0ff',pat:'ripples'},
+ void:{flat:'#000',edge:'#2a2a33',pat:'static'},
+ monolith:{top:'#3a3a42',front:'#202026',line:'#000',pat:'static'},
+ glitch:{top:'#d000d0',front:'#600060',line:'#000',pat:'checker'},
+ erased:{flat:'#fffdf4',edge:'#9a927a',pat:'dashes'}
+};
+function lookStyled(k,c,s){
+ if(s.flat){k.fillStyle=s.flat;k.fillRect(c.x,c.y,c.w,c.h)}
+ else{
+  k.fillStyle='rgba(0,0,0,.3)';k.fillRect(c.x+3,c.y+4,c.w,c.h);
+  const fh=Math.min(c.h,Math.max(10,Math.round(c.h*.5))),topH=c.h-fh;
+  k.fillStyle=s.top;k.fillRect(c.x,c.y,c.w,Math.max(topH,3));k.fillStyle=s.front;k.fillRect(c.x,c.y+topH,c.w,fh)
+ }
+ k.save();k.beginPath();k.rect(c.x,c.y,c.w,c.h);k.clip();
+ if(s.pat==='leaves')for(let i=0;i<c.w*c.h/36;i++){k.fillStyle=lookHash(i,c.x)>.5?'rgba(140,220,120,.35)':'rgba(10,40,20,.35)';k.fillRect(c.x+lookHash(i,1+c.y)*c.w,c.y+lookHash(i,2+c.x)*c.h,3,3)}
+ else if(s.pat==='planks'){k.fillStyle=s.line;for(let y=c.y+6;y<c.y+c.h;y+=6)k.fillRect(c.x,y,c.w,1)}
+ else if(s.pat==='books'){const pal=['#8a3b3b','#3b5a8a','#3b8a5a','#8a7a3b','#6b3b8a'];for(let x=c.x+2;x<c.x+c.w-2;x+=4){k.fillStyle=pal[Math.floor(lookHash(x,c.y)*5)];k.fillRect(x,c.y+c.h-4-Math.floor(lookHash(c.y,x)*10),3,12)}}
+ else if(s.pat==='ripples'){k.fillStyle='rgba(255,255,255,.3)';for(let y=c.y+6;y<c.y+c.h;y+=8)for(let x=c.x+((y>>3)%2?10:2);x<c.x+c.w;x+=18)k.fillRect(x,y,7,1)}
+ else if(s.pat==='static'){k.fillStyle='rgba(255,255,255,.07)';for(let y=c.y;y<c.y+c.h;y+=5)k.fillRect(c.x,y,c.w,1)}
+ else if(s.pat==='checker'){k.fillStyle='#000';for(let y=c.y;y<c.y+c.h;y+=8)for(let x=c.x+((y-c.y)/8%2?8:0);x<c.x+c.w;x+=16)k.fillRect(x,y,8,8)}
+ else if(s.pat==='dashes'){k.fillStyle='rgba(120,110,90,.35)';for(let y=c.y+8;y<c.y+c.h;y+=10)k.fillRect(c.x+6,y,c.w-12,1)}
+ k.restore();
+ k.strokeStyle=s.edge||s.line;k.lineWidth=2;k.strokeRect(c.x+1,c.y+1,c.w-2,c.h-2)
+}
 function lookPillars(k,r,th){
  for(const c of r.c||[]){
+  if(c.inv)continue;
+  const sty=c.style&&LOOK_BLOCK_STYLES[c.style];
+  if(sty){lookStyled(k,c,sty);continue}
   k.fillStyle='rgba(0,0,0,.3)';k.fillRect(c.x+3,c.y+4,c.w,c.h);
   const fh=Math.min(c.h,Math.max(12,Math.round(c.h*.45))),topH=c.h-fh,front=r.obstacleColor||th.wallA;
   k.fillStyle=th.pillar;k.fillRect(c.x,c.y,c.w,Math.max(topH,2));
