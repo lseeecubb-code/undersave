@@ -50,11 +50,11 @@
   // scripts and order
   const scripts=[...document.scripts].map(s=>s.src).filter(Boolean).map(s=>s.split('/').pop().split('?')[0]);
   ok(scripts[0]==='debug.js','debug.js is the first script','order is: '+scripts.join(' → '));
-  const want=['world.js','look.js','story.js','main.js'],pos=want.map(n=>scripts.indexOf(n));
+  const want=['world.js','look.js','props.js','remodel.js','story.js','main.js'],pos=want.map(n=>scripts.indexOf(n));
   want.forEach((n,i)=>ok(pos[i]>=0,n+' is included',pos[i]<0?'missing <script src="js/'+n+'"> in index.html':''));
-  const present=pos.filter(p=>p>=0);ok(present.every((p,i)=>!i||p>present[i-1]),'world.js → look.js → story.js → main.js order','current order: '+scripts.join(' → '));
+  const present=pos.filter(p=>p>=0);ok(present.every((p,i)=>!i||p>present[i-1]),'world.js → look.js → props.js → remodel.js → story.js → main.js order','current order: '+scripts.join(' → '));
   // globals
-  const needs={world:['R','ENEMIES','NPCS','SHOPS','SPRITES','GAME_REPO_STORY_DATA','g','st','rm','pl','fr','updWorld','drawWorld','leave','saveProgress','wsay','hit','tx','blip','startBattle','sprite','candle'],look:['drawRoomScene','lookScene','roomTheme'],story:['storyStep','beginEndgame','restoreStoryState','checkStory','sceneForRoom']};
+  const needs={world:['R','ENEMIES','NPCS','SHOPS','SPRITES','GAME_REPO_STORY_DATA','g','st','rm','pl','fr','updWorld','drawWorld','leave','saveProgress','wsay','hit','tx','blip','startBattle','sprite','candle'],look:['drawRoomScene','lookScene','roomTheme'],props:['PROP_DRAW','PROP_SOLID'],remodel:['remodelAll','REMODEL'],story:['storyStep','beginEndgame','restoreStoryState','checkStory','sceneForRoom']};
   for(const group in needs){const missing=needs[group].filter(n=>kind(n)==='undefined'||kind(n)==='uninitialized');ok(!missing.length,group+' globals present',missing.length?'missing: '+missing.join(', '):'')}
   ok(kind('newGame')==='function','newGame() exists','story.js resets story state through it; if missing, call resetStoryState() when you start a new game');
   // wrappers + the world.js edit
@@ -87,6 +87,7 @@
    if(Array.isArray(themes)&&!themes.some(t=>t.m.test(String(r.n||'').toLowerCase())))issues.push(n+': no look theme matches this name (uses default purple ruins)')
   });
   ok(R.length>0,R.length+' rooms loaded');
+  const rem=G('REMODEL');if(rem&&rem.report){const kept=rem.report.filter(e=>/kept/.test(e.result));ok(!kept.length,'all rooms remodeled',kept.map(e=>e.name+': '+e.result).join('\n'))}
   ok(!issues.length,'room data references',issues.slice(0,25).join('\n')+(issues.length>25?'\n…and '+(issues.length-25)+' more':''));
   if(kind('checkStory')==='function'){let p=[];try{p=G('checkStory()')||[]}catch(e){p=['checkStory threw: '+e.message]}ok(!p.length,'story scenes and doors',p.join('\n'))}
   checks=out;checkedAt=new Date().toLocaleTimeString();schedule();return out
