@@ -1,4 +1,4 @@
-// bigmap.js — scrolling camera, rooms bigger than the screen, and custom tile layers.
+// bigmap.js — scrolling camera, rooms bigger than the screen, and custom tile layers. 
 // Load AFTER npclife.js and BEFORE main.js. Needs the small edits already made in the supplied world.js.
 //
 // ROOMS: a room's floor f:[x,y,w,h] may now be larger than 640x480. The camera follows the player and
