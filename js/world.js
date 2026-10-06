@@ -65,7 +65,7 @@ function updWorld(){
   // Signs, save points, and decorative sprites are not physical obstacles.
   // Treating every object as solid could trap the player when a checkpoint
   // spawn overlaps its save marker.
-  const solid=(x,y)=>r.o.some(o=>['npc','shop','chest','wickmob'].includes(o.k)&&!(o.k==='wickmob'&&beaten)&&Math.abs(x-o.x)<20&&Math.abs(y-o.y)<12)||(r.c||[]).some(c=>x+6>c.x&&x-6<c.x+c.w&&y+8>c.y&&y-4<c.y+c.h);
+  const solid=(x,y)=>r.o.some(o=>['npc','shop','chest','wickmob'].includes(o.k)&&!(o.k==='wickmob'&&beaten)&&Math.abs(x-o.x)<20&&Math.abs(y-o.y)<12)||(r.c||[]).some(c=>x+6>c.x&&x-6<c.x+c.w&&y+8>c.y&&y-4<c.y+c.h)||(typeof tileSolidAt==='function'&&tileSolidAt(r,x,y));
   const nx=Math.max(f[0]+7,Math.min(f[0]+f[2]-7,pl.x+dx*2.2));if(!solid(nx,pl.y))pl.x=nx;
   const ny=Math.max(f[1]+10,Math.min(f[1]+f[3],pl.y+dy*2.2));if(!solid(pl.x,ny))pl.y=ny;
   for(const d of r.d)if(pl.x+7>d.x&&pl.x-7<d.x+d.w&&pl.y>d.y&&pl.y-8<d.y+d.h){
@@ -103,8 +103,10 @@ function drawWorld(){
  const r=R[rm],f=r.f;
  setGameMusic(r.soundData||'',.3);
  g.fillStyle='#000';g.fillRect(0,0,640,480);
+ if(typeof camBegin==='function')camBegin(r);
  try{drawRoomScene(r)}catch(e){g.fillStyle=r.bg;g.fillRect(f[0],f[1],f[2],f[3]);g.strokeStyle='#6b5a8a';g.lineWidth=4;g.strokeRect(f[0]-2,f[1]-2,f[2]+4,f[3]+4);for(const c of r.c||[]){g.fillStyle='rgba(10,9,16,.82)';g.fillRect(c.x,c.y,c.w,c.h)}for(const d of r.d)if(d.to>=0||beaten){g.fillStyle='rgba(255,210,122,.22)';g.fillRect(d.x,d.y,d.w,d.h)}g.fillStyle='#f55';g.font='9px monospace';g.fillText('look.js: '+String(e&&e.message||e),8,462)}
  const L=r.o.map(o=>({y:o.y,d:()=>obj(o)}));L.push({y:pl.y,d:player});L.sort((a,b)=>a.y-b.y).forEach(e=>e.d());
+ if(typeof camEnd==='function')camEnd(r);
  tx(r.n,20,16,'#777',10);tx('LV '+playerLevel+'  HP '+hp+'/'+mhp+'   BUNS '+buns,340,16,'#aaa',9);
  if(st==='wtext'){g.fillStyle='#000';g.fillRect(40,336,560,128);g.strokeStyle='#fff';g.lineWidth=5;g.strokeRect(38,334,564,132);
   const layout=worldTextLayouts[wi]||fitDialogueText(wl[wi]);let remaining=shown;layout.lines.forEach((line,i)=>{const visible=Math.max(0,Math.min(line.length,remaining));tx(line.slice(0,visible),62,354+i*27,'#fff',layout.size);remaining-=line.length})}
@@ -116,8 +118,8 @@ function drawWorld(){
   else if(menuMode==='items'){const entries=inventoryEntries(),loot=materialEntries(),items=[...entries.map(([id,count])=>({label:(itemById(id)?.name||id)+(count>1?'  x'+count:''),kind:'item'})),...loot.map(([name,count])=>({label:name+'  x'+count+'  (material)',kind:'material'}))],back=items.length;if(!items.length)tx('(No items)',68,120,'#aaa',12);const start=Math.max(0,Math.min(menuIndex-4,items.length-6));items.slice(start,start+6).forEach((item,i)=>{const index=start+i;tx((index===menuIndex?'> ':'  ')+item.label,68,105+i*34,index===menuIndex?'#ff0':item.kind==='material'?'#aaa':'#fff',9)});if(items.length>6)tx((start+1)+'–'+Math.min(start+6,items.length)+' / '+items.length,430,340,'#888',9);tx((menuIndex===back?'> ':'  ')+'Back',68,374,menuIndex===back?'#ff0':'#aaa',12);tx('Z use / view · X return',52,412,'#888',10)}
   else if(menuMode==='shops'){SHOPS.forEach((shop,i)=>tx((i===menuIndex?'> ':'  ')+shop.name,68,105+i*38,i===menuIndex?'#ff0':'#fff',12));const back=SHOPS.length;tx((menuIndex===back?'> ':'  ')+'Back',68,105+back*38,menuIndex===back?'#ff0':'#aaa',12);tx('Choose a shop · Z enter',52,412,'#888',10)}
   else {tx('LV  '+playerLevel+'     EXP  '+experience+' / '+(playerLevel>=20?'MAX':experienceForLevel(playerLevel)),68,112,'#fff',12);tx('HP  '+hp+' / '+mhp,68,150,'#fff',12);tx('BUNS  '+buns,68,188,'#ffd27a',12);tx('ITEMS  '+inventory.length+' / 8',68,226,'#fff',12);tx(menuNotice||'Progress is saved at the current position.',68,286,'#aaa',10);tx('X return',52,412,'#888',10)}}
- if(st==='enc'){if(et<30&&fr%8<4){g.fillStyle='#fff';g.fillRect(pl.x-2,pl.y-52,4,12);g.fillRect(pl.x-2,pl.y-36,4,4)}
-  if(et>=30){heart(pl.x,pl.y-14)}
+ if(st==='enc'){if(et<30&&fr%8<4){g.fillStyle='#fff';const cx=window.CAM?CAM.x:0,cy=window.CAM?CAM.y:0;g.fillRect(pl.x-2-cx,pl.y-52-cy,4,12);g.fillRect(pl.x-2-cx,pl.y-36-cy,4,4)}
+  if(et>=30){heart(pl.x-(window.CAM?CAM.x:0),pl.y-14-(window.CAM?CAM.y:0))}
   g.fillStyle='rgba(0,0,0,'+Math.min(1,Math.max(0,(et-25)/35))+')';g.fillRect(0,0,640,480)}
  if(st==='fin'){g.fillStyle='#000';g.fillRect(0,0,640,480);tx('THE END?',220,150,'#ff7a00',24);
   (spared?["You and WICK light the way","out of the dark, together."]:["The dark feels a little","heavier than before."]).forEach((l,i)=>tx(l,100,230+i*30,'#fff',15));
