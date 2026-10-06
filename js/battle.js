@@ -9,7 +9,7 @@ function blip(f,d,v=.04,type='square'){if(!au)return;const o=au.createOscillator
   o.connect(a);a.connect(au.destination);o.start();a.gain.exponentialRampToValueAtTime(.0001,au.currentTime+d);o.stop(au.currentTime+d)}
 
 const TB={x:40,y:250,w:560,h:140},DB={x:190,y:215,w:260,h:180};
-let box={...TB},st,hp,mhp=20,ehp,emax=60,turn,buns,graze,inv,mercy,acted,menu,sub,sel,text,shown,after,B,t,dur,atk,shake,flash,heal,hx,hy,fr=0;
+let box={...TB},st,hp,mhp=20,ehp,emax=60,turn,buns,graze,inv,mercy,acted,menu=0,sub=null,sel=0,text,shown,after,B,t,dur,atk,shake,flash,heal,hx,hy,fr=0;
 let playerLevel=1,experience=0;
 let rm,pl,beaten,spared,taken,wl,wi,wcb,et,resp,activeEnemy,defeated={},dialogueFont=16,bossPhaseTwo=false;
 const heartMap=["0110110","1111111","1111111","0111110","0011100","0001000"];
@@ -20,7 +20,7 @@ function newGame(fresh=false){playerLevel=1;experience=0;mhp=20;hp=mhp;buns=2;in
   if(fresh){try{localStorage.removeItem('wick-save-slot')}catch(_){}}
   else if(!window.wickStarted){try{const save=JSON.parse(localStorage.getItem('wick-save-slot')||'null');if(save){const room=R.findIndex(r=>r.id===save.roomId);if(room>=0){rm=room;pl={x:save.x,y:save.y};hp=save.hp;mhp=save.mhp;playerLevel=save.playerLevel;experience=save.experience;buns=save.buns;inventory=save.inventory||[];materials=save.materials||{};defeated=save.defeated||{};taken=save.taken||{};resp=save.resp||resp;const resumed=true;wsay(["* Your journey continues.","* (Press Escape to open the menu.)"]);return}}}catch(_){}}
   window.wickStarted=true;wsay(["* You wake in a quiet hall.","* The air smells like melted wax.","* (Arrows to move, Z to interact)"])}
-function startBattle(){activeEnemy=ENEMIES.find(e=>e.id===(pendingEnemyId||R[rm].enemyId||'wick'))||ENEMIES[0];if(window.ensureEnemySprite)window.ensureEnemySprite(activeEnemy);setGameMusic(activeEnemy.audio,.25);ehp=emax=Math.max(1,+activeEnemy.hp||60);bossPhaseTwo=false;turn=0;acted=new Set();mercy=0;B=[];st='text';graze=0;
+function startBattle(){activeEnemy=ENEMIES.find(e=>e.id===(pendingEnemyId||R[rm].enemyId||'wick'))||ENEMIES[0];if(window.ensureEnemySprite)window.ensureEnemySprite(activeEnemy);setGameMusic(activeEnemy.audio,.25);ehp=emax=Math.max(1,+activeEnemy.hp||60);bossPhaseTwo=false;turn=0;acted=new Set();mercy=0;B=[];st='text';graze=0;menu=0;sub=null;sel=0;
   const openers=activeEnemy.repoDialogue?.attack;const opener=openers?.length?openers[Math.floor(Math.random()*openers.length)]:activeEnemy.name+' blocks your way.';say('* '+opener,toMenu)}
 function say(s,n){const layout=fitDialogueText(s);text=layout.lines.join('\n');dialogueFont=layout.size;shown=0;after=n;st='text'}
 function sayPages(pages,done){let index=0;const next=()=>{if(index>=pages.length){if(done)done();return}say(pages[index++],next)};next()}
