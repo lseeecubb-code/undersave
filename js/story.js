@@ -22,15 +22,18 @@ function restoreStoryState(save){seenScenes=(save&&save.seenScenes)||{};sparedWi
 /* ---------- scenes ---------- */
 // Finds the chapter scene attached to a room by matching its sign text
 // against STORY_SCENES (a sign may also set sceneId directly).
+// Room names from the story outline, used when no sign in the room carries the scene text.
+const STORY_ROOM_SCENES=[[/quiet road/,'chapter_0_intro'],[/frontier/,'chapter_1_crack'],[/cathedral/,'chapter_2_cathedral'],[/null/,'chapter_3_null'],[/unfinished/,'chapter_4_unfinished'],[/outside/,'chapter_5_last_save'],[/archive/,'chapter_6_archive'],[/hollow kingdom/,'chapter_7_hollow'],[/margin/,'chapter_8_margin'],[/blank/,'chapter_9_blank'],[/autosave|last save/,'chapter_10_final']];
+function storyNorm(v){return String(Array.isArray(v)?v.join(' '):v||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
 function sceneForRoom(room){
  const scenes=storyData().STORY_SCENES||{};
  for(const o of room.o||[]){
   if(o.sceneId&&scenes[o.sceneId])return o.sceneId;
-  if(!Array.isArray(o.t)||!o.t.length)continue;
-  const first=String(o.t[0]).replace(/^\*\s*/,'');
-  for(const id in scenes)if(scenes[id][0]===first)return id;
+  const text=storyNorm(o.t);if(!text)continue;
+  for(const id in scenes){const probe=storyNorm(scenes[id].slice(0,2));if(probe&&text.includes(probe))return id}
  }
- return null;
+ const name=String(room.n||'').toLowerCase(),found=STORY_ROOM_SCENES.find(([re,id])=>re.test(name)&&scenes[id]);
+ return found?found[1]:null
 }
 function chapterTitleForScene(id){
  const m=/chapter_(\d+)/.exec(id||'');if(!m)return '';
@@ -165,6 +168,16 @@ saveProgress=function(updateResp=true){
  _saveProgress(updateResp);
  try{const raw=JSON.parse(localStorage.getItem('wick-save-slot'));raw.seenScenes=seenScenes;raw.sparedWick=sparedWick;localStorage.setItem('wick-save-slot',JSON.stringify(raw))}catch(_){}
 };
+
+
+// Battle menu safety: battle.js never gives `menu` a starting value, so the first arrow key
+// turns it into NaN and nothing can be selected. Make sure it is always a valid index.
+try{
+ const _startBattle=startBattle;
+ startBattle=function(){menu=0;sub=null;sel=0;return _startBattle.apply(this,arguments)};
+ const _toMenu=toMenu;
+ toMenu=function(){if(!(menu>=0&&menu<4))menu=0;return _toMenu.apply(this,arguments)};
+}catch(e){console.warn('[story.js] battle menu guard not installed',e)}
 
 try{const _newGame=newGame;newGame=function(...a){resetStoryState();return _newGame.apply(this,a)}}catch(_){}
 
