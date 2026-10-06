@@ -50,11 +50,11 @@
   // scripts and order
   const scripts=[...document.scripts].map(s=>s.src).filter(Boolean).map(s=>s.split('/').pop().split('?')[0]);
   ok(scripts[0]==='debug.js','debug.js is the first script','order is: '+scripts.join(' → '));
-  const want=['world.js','look.js','props.js','remodel.js','story.js','main.js'],pos=want.map(n=>scripts.indexOf(n));
+  const want=['world.js','look.js','props.js','remodel.js','story.js','npclife.js','main.js'],pos=want.map(n=>scripts.indexOf(n));
   want.forEach((n,i)=>ok(pos[i]>=0,n+' is included',pos[i]<0?'missing <script src="js/'+n+'"> in index.html':''));
-  const present=pos.filter(p=>p>=0);ok(present.every((p,i)=>!i||p>present[i-1]),'world.js → look.js → props.js → remodel.js → story.js → main.js order','current order: '+scripts.join(' → '));
+  const present=pos.filter(p=>p>=0);ok(present.every((p,i)=>!i||p>present[i-1]),'world.js → look.js → props.js → remodel.js → story.js → npclife.js → main.js order','current order: '+scripts.join(' → '));
   // globals
-  const needs={world:['R','ENEMIES','NPCS','SHOPS','SPRITES','GAME_REPO_STORY_DATA','g','st','rm','pl','fr','updWorld','drawWorld','leave','saveProgress','wsay','hit','tx','blip','startBattle','sprite','candle'],look:['drawRoomScene','lookScene','roomTheme'],props:['PROP_DRAW','PROP_SOLID'],remodel:['remodelAll','REMODEL'],story:['storyStep','beginEndgame','restoreStoryState','checkStory','sceneForRoom']};
+  const needs={world:['R','ENEMIES','NPCS','SHOPS','SPRITES','GAME_REPO_STORY_DATA','g','st','rm','pl','fr','updWorld','drawWorld','leave','saveProgress','wsay','hit','tx','blip','startBattle','sprite','candle'],look:['drawRoomScene','lookScene','roomTheme'],props:['PROP_DRAW','PROP_SOLID'],remodel:['remodelAll','REMODEL'],story:['storyStep','beginEndgame','restoreStoryState','checkStory','sceneForRoom'],npclife:['NPCLIFE']};
   for(const group in needs){const missing=needs[group].filter(n=>kind(n)==='undefined'||kind(n)==='uninitialized');ok(!missing.length,group+' globals present',missing.length?'missing: '+missing.join(', '):'')}
   ok(kind('newGame')==='function','newGame() exists','story.js resets story state through it; if missing, call resetStoryState() when you start a new game');
   // wrappers + the world.js edit
