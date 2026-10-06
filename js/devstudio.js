@@ -171,6 +171,221 @@ function(){
  }
 });
 
+/* ================= TILES ================= */
+addTab('tiles','Tiles',`
+<aside class="devpanel"><h2>Tile editor</h2>
+<label>Tile<select id="tl-sel"></select></label>
+<div class="toolbar"><button id="tl-new">New tile</button><button id="tl-del">Delete tile</button></div>
+<label>Name<input id="tl-name" value="New tile"></label>
+<label>Size (pixels)<select id="tl-size"><option>16</option><option>32</option></select></label>
+<label>Color<input id="tl-color" type="color" value="#6bbf59"></label>
+<div class="toolbar" id="tl-tools"><button data-tool="draw">Draw</button><button data-tool="erase">Erase</button><button data-tool="fill">Fill</button><button data-tool="pick">Pick color</button></div>
+<label><input id="tl-solid" type="checkbox" style="display:inline;width:auto"> Solid (blocks walking)</label>
+<label>Import an image (scaled to the tile)<input id="tl-import" type="file" accept="image/*"></label>
+<div class="toolbar"><button id="tl-clear">Clear</button><button id="tl-save">Save tile</button></div>
+<div id="tl-s" class="hint"></div>
+<canvas id="tl-canvas" width="384" height="384"></canvas></aside>
+<div class="devpanel"><h2>Seamless preview</h2><canvas id="tl-prev" width="256" height="256"></canvas>
+<p class="hint">The preview repeats the tile 4×4 so you can check that edges join. Tiles are drawn on a 32×32 grid: 16-pixel tiles are doubled, 32-pixel tiles are shown 1:1.</p>
+<p class="hint">Saved tiles show up in the BIG MAPS tab for painting. Solid tiles block the player and walking NPCs. Max 52 colors per tile (extra colors are rounded automatically).</p></div>`,
+function(){
+ const BM=window.BIGMAP;if(!BM){say('tl-s','bigmap.js is not loaded.',1);return}
+ const arr=BM.tiles(),cv=$('tl-canvas'),k=cv.getContext('2d'),pv=$('tl-prev').getContext('2d');
+ let T=PANELS._T||(PANELS._T={id:null,s:16,px:[],tool:'draw'});
+ const sizeOf=()=>+$('tl-size').value;
+ const blank=s=>Array(s*s).fill(null);
+ if(!T.px.length)T.px=blank(T.s);
+ const refreshSel=()=>{$('tl-sel').innerHTML='<option value="">(new tile)</option>'+arr.map(t=>`<option value="${esc(t.id)}">${esc(t.name||t.id)} (${esc(t.id)})</option>`).join('');$('tl-sel').value=T.id||''};
+ const decode=t=>{const s=t.s||16,px=[];for(let i=0;i<s*s;i++){const c=t.px[i];px.push(c&&c!=='.'&&t.pal[c]?t.pal[c]:null)}return px};
+ const draw=()=>{
+  const s=T.s,c=cv.width/s;
+  for(let y=0;y<s;y++)for(let x=0;x<s;x++){
+   k.fillStyle=(x+y)%2?'#2a2a33':'#202028';k.fillRect(x*c,y*c,c,c);
+   const col=T.px[y*s+x];if(col){k.fillStyle=col;k.fillRect(x*c,y*c,c,c)}
+  }
+  k.strokeStyle='rgba(255,255,255,.08)';k.lineWidth=1;
+  for(let i=0;i<=s;i++){k.beginPath();k.moveTo(i*c+.5,0);k.lineTo(i*c+.5,cv.width);k.stroke();k.beginPath();k.moveTo(0,i*c+.5);k.lineTo(cv.width,i*c+.5);k.stroke()}
+  const m=document.createElement('canvas');m.width=m.height=s;const mk=m.getContext('2d');
+  for(let i=0;i<s*s;i++)if(T.px[i]){mk.fillStyle=T.px[i];mk.fillRect(i%s,Math.floor(i/s),1,1)}
+  pv.imageSmoothingEnabled=false;pv.fillStyle='#08080b';pv.fillRect(0,0,256,256);
+  for(let j=0;j<4;j++)for(let i=0;i<4;i++)pv.drawImage(m,i*64,j*64,64,64)
+ };
+ const load=id=>{
+  const t=arr.find(x=>x.id===id);
+  if(t){T.id=t.id;T.s=t.s||16;T.px=decode(t);$('tl-name').value=t.name||t.id;$('tl-size').value=T.s;$('tl-solid').checked=!!t.solid}
+  else{T.id=null;T.s=sizeOf();T.px=blank(T.s);$('tl-name').value='New tile';$('tl-solid').checked=false}
+  draw()
+ };
+ const marks=()=>$('tl-tools').querySelectorAll('button').forEach(b=>b.style.outline=b.dataset.tool===T.tool?'2px solid #ff0':'');
+ refreshSel();load(T.id);marks();
+ $('tl-sel').onchange=()=>load($('tl-sel').value);
+ $('tl-new').onclick=()=>{T.id=null;refreshSel();load('')};
+ $('tl-size').onchange=()=>{if(!T.id){T.s=sizeOf();T.px=blank(T.s);draw()}else{$('tl-size').value=T.s;say('tl-s','Size can only change on a new tile.',1)}};
+ $('tl-tools').onclick=e=>{const b=e.target.closest('button');if(b){T.tool=b.dataset.tool;marks()}};
+ $('tl-clear').onclick=()=>{T.px=blank(T.s);draw()};
+ const at=e=>{const r=cv.getBoundingClientRect(),s=T.s;return[Math.floor((e.clientX-r.left)/r.width*s),Math.floor((e.clientY-r.top)/r.height*s)]};
+ const flood=(x,y,to)=>{
+  const s=T.s,from=T.px[y*s+x];if(from===to)return;
+  const st=[[x,y]];
+  while(st.length){const[a,b]=st.pop();if(a<0||b<0||a>=s||b>=s||T.px[b*s+a]!==from)continue;T.px[b*s+a]=to;st.push([a+1,b],[a-1,b],[a,b+1],[a,b-1])}
+ };
+ const paint=e=>{
+  const[x,y]=at(e),s=T.s;if(x<0||y<0||x>=s||y>=s)return;
+  const col=$('tl-color').value;
+  if(T.tool==='draw')T.px[y*s+x]=col;
+  else if(T.tool==='erase')T.px[y*s+x]=null;
+  else if(T.tool==='pick'){const c=T.px[y*s+x];if(c)$('tl-color').value=c}
+  else if(T.tool==='fill'&&e.type==='mousedown')flood(x,y,T.tool==='fill'?col:null);
+  draw()
+ };
+ if(!cv._bound){
+  cv._bound=1;let down=false;
+  cv.addEventListener('mousedown',e=>{down=true;paint(e)});
+  cv.addEventListener('mousemove',e=>{if(down&&(T.tool==='draw'||T.tool==='erase'))paint(e)});
+  addEventListener('mouseup',()=>down=false)
+ }
+ $('tl-import').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const im=new Image();
+  im.onload=()=>{
+   const s=T.s,c=document.createElement('canvas');c.width=c.height=s;const x=c.getContext('2d');x.imageSmoothingEnabled=false;x.drawImage(im,0,0,s,s);
+   const d=x.getImageData(0,0,s,s).data;T.px=[];
+   for(let i=0;i<s*s;i++)T.px.push(d[i*4+3]<128?null:'#'+[d[i*4],d[i*4+1],d[i*4+2]].map(v=>v.toString(16).padStart(2,'0')).join(''));
+   URL.revokeObjectURL(im.src);draw();say('tl-s','Imported. Press Save tile to keep it.')
+  };
+  im.onerror=()=>say('tl-s','Could not read that image.',1);
+  im.src=URL.createObjectURL(f);e.target.value=''
+ };
+ $('tl-save').onclick=()=>{
+  const q=c=>'#'+[1,3,5].map(i=>Math.min(255,Math.round(parseInt(c.substr(i,2),16)/32)*32).toString(16).padStart(2,'0')).join('');
+  let px=T.px.slice(),cols=[...new Set(px.filter(Boolean))];
+  if(cols.length>52){px=px.map(c=>c&&q(c));cols=[...new Set(px.filter(Boolean))]}
+  if(cols.length>52){say('tl-s','Too many colors ('+cols.length+'). Use fewer colors.',1);return}
+  const L='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',pal={};cols.forEach((c,i)=>pal[L[i]]=c);
+  const inv={};for(const l in pal)inv[pal[l]]=l;
+  const name=$('tl-name').value.trim()||'Tile';
+  let id=T.id;
+  if(!id){const base=name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')||'tile';id=base;for(let n=2;arr.some(t=>t.id===id);n++)id=base+'_'+n}
+  const def={id,name,s:T.s,solid:$('tl-solid').checked,pal,px:px.map(c=>c?inv[c]:'.').join('')};
+  const i=arr.findIndex(t=>t.id===id);if(i>=0)arr[i]=def;else arr.push(def);
+  T.id=id;ov.tiles[id]=def;persist();BM.touch();refreshSel();
+  say('tl-s','Saved "'+name+'" ('+id+'). Export to keep it in game-data.js.')
+ };
+ $('tl-del').onclick=()=>{
+  if(!T.id||!confirm('Delete tile "'+T.id+'"? Rooms that use it will show nothing there.'))return;
+  const i=arr.findIndex(t=>t.id===T.id);if(i>=0)arr.splice(i,1);ov.tiles[T.id]=null;persist();BM.touch();T.id=null;refreshSel();load('')
+ }
+});
+
+/* ================= BIG MAPS ================= */
+addTab('bigmap','Big maps',`
+<aside class="devpanel"><h2>Big maps &amp; tile painting</h2>
+<label>Room<select id="bm-room"></select></label>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+<label>Floor X<input id="bm-fx" type="number"></label><label>Floor Y<input id="bm-fy" type="number"></label>
+<label>Width<input id="bm-fw" type="number"></label><label>Height<input id="bm-fh" type="number"></label></div>
+<div class="toolbar"><button id="bm-size">Apply size</button><button id="bm-fit">Fit tile grid to floor</button></div>
+<label>Layer<select id="bm-layer"><option value="b">Floor (under everything)</option><option value="a">Above (drawn over the player)</option></select></label>
+<label>Tool<select id="bm-tool"><option value="paint">Paint</option><option value="erase">Erase</option><option value="rect">Fill rectangle</option></select></label>
+<label>Zoom<select id="bm-zoom"><option value="0.25">25%</option><option value="0.5" selected>50%</option><option value="1">100%</option><option value="2">200%</option></select></label>
+<label>Tiles <span class="hint">(click to pick)</span></label><div id="bm-pal" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+<div class="toolbar" style="margin-top:8px"><button id="bm-play">Play from this room</button><button id="bm-clear">Clear tiles</button></div>
+<div id="bm-s" class="hint"></div></aside>
+<div class="devpanel" style="overflow:auto"><canvas id="bm-canvas" width="640" height="480" style="width:auto;max-width:none;image-rendering:pixelated"></canvas>
+<p class="hint">Blue frame = what the camera shows (640×480) around your cursor. Red = collision boxes, yellow = doors, cyan = objects. Move doors and objects in the Maps tab. Size limit: 4096×4096. Keep rooms under about 100×60 tiles for smooth loading. Each room can use up to 35 different tiles.</p></div>`,
+function(){
+ const BM=window.BIGMAP;if(!BM){say('bm-s','bigmap.js is not loaded.',1);return}
+ const R=G('R')||[],cv=$('bm-canvas'),k=cv.getContext('2d');
+ const S=PANELS._B||(PANELS._B={tile:null,hover:null,rect:null,down:false});
+ const rs=$('bm-room'),keep=rs.value;
+ rs.innerHTML=R.map((r,i)=>`<option value="${esc(roomId(r))}">${esc(r.n||i)} (${r.f?r.f[2]+'×'+r.f[3]:''})</option>`).join('');if(keep)rs.value=keep;
+ const room=()=>R.find(x=>String(roomId(x))===rs.value);
+ const zoom=()=>+$('bm-zoom').value;
+ const commit=r=>{
+  r.noRemodel=true;BM.touch(r);
+  ov.layout[roomId(r)]={f:r.f.slice(),tm:r.tm?JSON.parse(JSON.stringify(r.tm,(kk,v)=>kk.startsWith('__')?undefined:v)):undefined,noRemodel:true};persist()
+ };
+ const pal=()=>{
+  const el=$('bm-pal'),arr=BM.tiles();el.innerHTML='';
+  if(!arr.length){el.innerHTML='<span class="hint">No tiles yet. Make some in the Tiles tab.</span>';return}
+  if(!S.tile||!arr.some(t=>t.id===S.tile))S.tile=arr[0].id;
+  for(const t of arr){
+   const b=document.createElement('button'),c=document.createElement('canvas');c.width=c.height=32;c.style.cssText='width:32px;height:32px;image-rendering:pixelated;display:block';
+   const x=c.getContext('2d');x.imageSmoothingEnabled=false;x.drawImage(BM.tileCanvas(t),0,0,32,32);
+   b.appendChild(c);b.title=t.name||t.id;b.style.cssText='padding:2px;'+(t.id===S.tile?'outline:2px solid #ff0':'');
+   b.onclick=()=>{S.tile=t.id;pal()};el.appendChild(b)
+  }
+ };
+ const render=()=>{
+  const r=room();if(!r||!r.f)return;
+  const[W,H]=BM.worldSize(r),z=zoom();
+  cv.width=Math.round(W*z);cv.height=Math.round(H*z);
+  k.setTransform(z,0,0,z,0,0);k.imageSmoothingEnabled=false;
+  k.fillStyle='#08080b';k.fillRect(0,0,W,H);
+  k.fillStyle='#262633';k.fillRect(r.f[0],r.f[1],r.f[2],r.f[3]);
+  if(z>=.5){k.strokeStyle='rgba(255,255,255,.07)';k.lineWidth=1/z;k.beginPath();for(let x=r.f[0];x<=r.f[0]+r.f[2];x+=32){k.moveTo(x,r.f[1]);k.lineTo(x,r.f[1]+r.f[3])}for(let y=r.f[1];y<=r.f[1]+r.f[3];y+=32){k.moveTo(r.f[0],y);k.lineTo(r.f[0]+r.f[2],y)}k.stroke()}
+  BM.drawLayer(k,r,'b');k.globalAlpha=.8;BM.drawLayer(k,r,'a');k.globalAlpha=1;
+  for(const c of r.c||[]){k.fillStyle='rgba(255,60,60,.35)';k.fillRect(c.x,c.y,c.w,c.h)}
+  for(const d of r.d||[]){k.fillStyle='rgba(255,220,0,.45)';k.fillRect(d.x,d.y,d.w,d.h)}
+  k.fillStyle='#4ff';k.font=(10/Math.max(z,.5))+'px monospace';
+  for(const o of r.o||[]){if(typeof o.x!=='number')continue;k.fillRect(o.x-3,o.y-3,6,6);if(z>=.5)k.fillText(o.k||'',o.x+5,o.y-4)}
+  if(S.rect){k.fillStyle='rgba(255,255,0,.25)';k.fillRect(S.rect.x0*32+(r.tm?r.tm.x:r.f[0]),S.rect.y0*32+(r.tm?r.tm.y:r.f[1]),(S.rect.x1-S.rect.x0+1)*32,(S.rect.y1-S.rect.y0+1)*32)}
+  if(S.hover){k.strokeStyle='#39f';k.lineWidth=2/z;k.strokeRect(S.hover.x-320,S.hover.y-240,640,480)}
+ };
+ const load=()=>{const r=room();if(!r)return;$('bm-fx').value=r.f[0];$('bm-fy').value=r.f[1];$('bm-fw').value=r.f[2];$('bm-fh').value=r.f[3];S.rect=null;render()};
+ rs.onchange=load;$('bm-zoom').onchange=render;pal();load();
+ $('bm-size').onclick=()=>{
+  const r=room();if(!r)return;
+  const v=['bm-fx','bm-fy','bm-fw','bm-fh'].map(id=>Math.round(+$(id).value));
+  if(v.some(isNaN)||v[2]<160||v[3]<160||v[0]<0||v[1]<0||v[0]+v[2]>BM.maxDim-40||v[1]+v[3]>BM.maxDim-60){say('bm-s','Size must be at least 160, and X+width / Y+height must stay within '+(BM.maxDim-60)+'.',1);return}
+  r.f=v;commit(r);load();say('bm-s','Floor is now '+v[2]+'×'+v[3]+'. Doors and objects stay where they were; move them in the Maps tab.')
+ };
+ $('bm-fit').onclick=()=>{
+  const r=room();if(!r)return;
+  const tm=r.tm||(r.tm=BM.tmNew(r));tm.x=r.f[0];tm.y=r.f[1];BM.tmResize(tm,Math.ceil(r.f[2]/32),Math.ceil(r.f[3]/32));commit(r);render();say('bm-s','Tile grid is '+tm.w+'×'+tm.h+' cells.')
+ };
+ $('bm-clear').onclick=()=>{const r=room();if(!r||!r.tm||!confirm('Remove every tile from this room?'))return;delete r.tm;commit(r);render()};
+ $('bm-play').onclick=()=>{
+  const r=room(),i=R.indexOf(r);if(!r)return;
+  const sp=(r.spawns||[]).find(s=>typeof s.x==='number'&&typeof s.y==='number');
+  const x=sp?sp.x:Math.round(r.f[0]+r.f[2]/2),y=sp?sp.y:Math.round(r.f[1]+r.f[3]/2);
+  try{(0,eval)('rm='+i+';pl={x:'+x+',y:'+y+'}');window.NPCLIFE&&NPCLIFE.suspend();$('dev-close').click()}catch(e){say('bm-s','Could not warp: '+e.message,1)}
+ };
+ /* painting */
+ const pos=e=>{const b=cv.getBoundingClientRect(),z=zoom();return{x:(e.clientX-b.left)*(cv.width/b.width)/z,y:(e.clientY-b.top)*(cv.height/b.height)/z}};
+ const cell=(r,p)=>{const tm=r.tm,ox=tm?tm.x:r.f[0],oy=tm?tm.y:r.f[1];return{x:Math.floor((p.x-ox)/32),y:Math.floor((p.y-oy)/32)}};
+ const apply=(r,cx,cy)=>{
+  const tm=r.tm||(r.tm=BM.tmNew(r)),layer=$('bm-layer').value,id=$('bm-tool').value==='erase'?null:S.tile;
+  if(id===undefined||(id===null&&$('bm-tool').value!=='erase'))return false;
+  const ok=BM.tmSet(tm,layer,cx,cy,id);
+  if(!ok)say('bm-s',(cx<0||cy<0||cx>=tm.w||cy>=tm.h)?'Outside the tile grid. Press "Fit tile grid to floor".':'This room already uses 35 different tiles.',1);
+  return ok
+ };
+ if(!cv._bound){
+  cv._bound=1;
+  cv.addEventListener('contextmenu',e=>e.preventDefault());
+  cv.addEventListener('mousedown',e=>{
+   const r=room();if(!r)return;S.down=true;const c=cell(r,pos(e));
+   if($('bm-tool').value==='rect')S.rect={x0:c.x,y0:c.y,x1:c.x,y1:c.y,sx:c.x,sy:c.y};
+   else{apply(r,c.x,c.y);render()}
+  });
+  cv.addEventListener('mousemove',e=>{
+   const r=room();if(!r)return;const p=pos(e);S.hover=p;const c=cell(r,p);
+   if(S.down){
+    if(S.rect){S.rect.x0=Math.min(S.rect.sx,c.x);S.rect.x1=Math.max(S.rect.sx,c.x);S.rect.y0=Math.min(S.rect.sy,c.y);S.rect.y1=Math.max(S.rect.sy,c.y)}
+    else apply(r,c.x,c.y)
+   }
+   render()
+  });
+  cv.addEventListener('mouseleave',()=>{S.hover=null;render()});
+  addEventListener('mouseup',()=>{
+   if(!S.down)return;S.down=false;const r=room();if(!r)return;
+   if(S.rect){for(let y=S.rect.y0;y<=S.rect.y1;y++)for(let x=S.rect.x0;x<=S.rect.x1;x++)apply(r,x,y);S.rect=null}
+   if(r.tm)commit(r);render()
+  })
+ }
+});
+
 /* ================= EXPORT ================= */
 const BASE=['R','ENEMIES','NPCS','SHOPS','SPRITES','GAME_TILES','GAME_REPO_STORY_DATA'];
 const ATTACK_NAMES=['ATTACKS','ATTACK_PATTERNS','PATTERNS','ATTACK_LIST','PATTERN_LIST','BULLET_PATTERNS','WICK_PATTERNS','ATTACK_DEFS'];
